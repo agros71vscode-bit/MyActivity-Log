@@ -2,19 +2,26 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <!-- Make the page responsive on mobile -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Personal Journal</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; background: #f9f9f9; }
+    body { font-family: Arial, sans-serif; margin: 10px; background: #f9f9f9; font-size: 18px; }
     h2 { color: #333; }
-    input, select, textarea, button { margin: 5px; padding: 8px; }
+    input, select, textarea, button { margin: 8px; padding: 12px; font-size: 16px; }
     textarea { width: 100%; }
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; background: #fff; }
-    th, td { border: 1px solid #ccc; padding: 10px; text-align: left; vertical-align: top; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; background: #fff; font-size: 16px; }
+    th, td { border: 1px solid #ccc; padding: 12px; text-align: left; vertical-align: top; }
     th { background-color: #f4f4f4; }
     .actions button { margin-right: 5px; }
-    #searchBar { margin-top: 20px; width: 50%; padding: 8px; }
-    #exportBtn, #exportCSVBtn, #importBtn { margin-top: 20px; padding: 10px; background: #4CAF50; color: white; border: none; cursor: pointer; }
-    #exportBtn:hover, #exportCSVBtn:hover, #importBtn:hover { background: #45a049; }
+    #searchBar { margin-top: 20px; width: 100%; padding: 10px; font-size: 16px; }
+    #exportBtn, #exportCSVBtn, #importBtn, #exportGitHubBtn { margin-top: 20px; padding: 12px; background: #4CAF50; color: white; border: none; cursor: pointer; font-size: 16px; min-width: 150px; }
+    #exportBtn:hover, #exportCSVBtn:hover, #importBtn:hover, #exportGitHubBtn:hover { background: #45a049; }
+    @media (max-width: 600px) {
+      table { font-size: 14px; }
+      th, td { padding: 10px; }
+      button { width: 100%; margin-top: 10px; }
+    }
   </style>
 </head>
 <body>
@@ -23,14 +30,14 @@
   <!-- Entry Form -->
   <input type="datetime-local" id="dateInput">
   <select id="categoryInput">
-    <option value="Daily Log">📋Daily Log</option>
-    <option value="Emotional Outlet">🙄Emotional Outlet</option>
-    <option value="Goal Tracking">📌Goal Tracking</option>
-    <option value="Creative Space">🖼️Creative Space</option>
-    <option value="Self-Reflection">🧘‍♂️Self-Reflection</option>
+    <option value="Daily Log">Daily Log</option>
+    <option value="Emotional Outlet">Emotional Outlet</option>
+    <option value="Goal Tracking">Goal Tracking</option>
+    <option value="Creative Space">Creative Space</option>
+    <option value="Self-Reflection">Self-Reflection</option>
   </select>
   <textarea id="entryInput" placeholder="Write your thoughts here..." rows="5"></textarea>
-  <button onclick="addEntry()">Add Entry</button>
+  <button onclick="addEntry()">Save Entry</button>
 
   <!-- Search/Filter -->
   <input type="text" id="searchBar" placeholder="Search by keyword or category..." onkeyup="filterEntries()">
@@ -38,6 +45,7 @@
   <!-- Export & Import Buttons -->
   <button id="exportBtn" onclick="exportJournal()">Export to Text File</button>
   <button id="exportCSVBtn" onclick="exportJournalCSV()">Export to CSV (Google Sheets)</button>
+  <button id="exportGitHubBtn" onclick="exportToGitHubCSV()">Export to GitHub</button>
   <input type="file" id="importFile" style="display:none" accept=".txt" onchange="importJournal(event)">
   <button id="importBtn" onclick="document.getElementById('importFile').click()">Import from Text File</button>
 
@@ -55,10 +63,9 @@
   </table>
 
   <script>
-    // Load journal entries from localStorage (persistent storage in browser)
+    // Load journal entries from localStorage
     let journal = JSON.parse(localStorage.getItem("journal")) || [];
 
-    // Render the journal table
     function renderTable(filtered = null) {
       const tbody = document.querySelector("#journalTable tbody");
       tbody.innerHTML = "";
@@ -79,7 +86,6 @@
       localStorage.setItem("journal", JSON.stringify(journal));
     }
 
-    // Add a new entry
     function addEntry() {
       const dateInput = document.getElementById("dateInput");
       const categoryInput = document.getElementById("categoryInput");
@@ -100,7 +106,6 @@
       }
     }
 
-    // Edit an existing entry
     function editEntry(index) {
       const newDate = prompt("Edit date/time:", journal[index].date);
       const newCategory = prompt("Edit category:", journal[index].category);
@@ -112,7 +117,6 @@
       }
     }
 
-    // Delete an entry
     function deleteEntry(index) {
       if (confirm("Delete this entry?")) {
         journal.splice(index, 1);
@@ -120,7 +124,6 @@
       }
     }
 
-    // Filter entries by keyword, category, or date
     function filterEntries() {
       const query = document.getElementById("searchBar").value.toLowerCase();
       const filtered = journal.filter(item =>
@@ -131,7 +134,6 @@
       renderTable(filtered);
     }
 
-    // Export journal to plain text file
     function exportJournal() {
       if (journal.length === 0) {
         alert("No entries to export.");
@@ -149,19 +151,14 @@
       link.click();
     }
 
-    // Export journal to CSV (Google Sheets friendly)
     function exportJournalCSV() {
       if (journal.length === 0) {
         alert("No entries to export.");
         return;
       }
-
-      // CSV header
       let csvContent = "Date/Time,Category,Entry\n";
-
-      // Add each entry
       journal.forEach(item => {
-        const safeEntry = item.entry.replace(/"/g, '""'); // escape quotes
+        const safeEntry = item.entry.replace(/"/g, '""');
         csvContent += `"${item.date}","${item.category}","${safeEntry}"\n`;
       });
 
@@ -172,7 +169,6 @@
       link.click();
     }
 
-    // Import journal from text file
     function importJournal(event) {
       const file = event.target.files[0];
       if (!file) return;
@@ -199,8 +195,23 @@
       reader.readAsText(file);
     }
 
-    // Initial render when page loads
-    renderTable();
-  </script>
-</body>
-</html>
+    // Export journal directly to GitHub
+    async function exportToGitHubCSV() {
+      if (journal.length === 0) {
+        alert("No entries to export.");
+        return;
+      }
+
+      let csvContent = "Date/Time,Category,Entry\n";
+      journal.forEach(item => {
+        const safeEntry = item.entry.replace(/"/g, '""');
+        csvContent += `"${item.date}","${item.category}","${safeEntry}"\n`;
+      });
+
+      const base64Content = btoa(unescape(encodeURIComponent(csvContent)));
+
+      // 🔑 Replace these placeholders with your actual details
+      const username = "agros71vscode-bit";          // your GitHub username
+      const repo = "MyActivity-Log";                 // your repository name
+      const path = "journal.csv";                    // file name in repo
+      const token = "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";       // paste your Git
