@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Personal Journal</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; background: #f9f9f9; }
+    h2 { color: #333; }
+    input, select, textarea, button { margin: 5px; padding: 8px; }
+    textarea { width: 100%; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; background: #fff; }
+    th, td { border: 1px solid #ccc; padding: 10px; text-align: left; vertical-align: top; }
+    th { background-color: #f4f4f4; }
+    .actions button { margin-right: 5px; }
+    #searchBar { margin-top: 20px; width: 50%; padding: 8px; }
+    #exportBtn { margin-top: 20px; padding: 10px; background: #4CAF50; color: white; border: none; cursor: pointer; }
+    #exportBtn:hover { background: #45a049; }
+  </style>
+</head>
+<body>
+  <h2>My Journal</h2>
+
+  <!-- Entry Form -->
+  <input type="datetime-local" id="dateInput">
+  <select id="categoryInput">
+    <option value="Daily Log">📋Daily Log</option>
+    <option value="Emotional Outlet">🙄Emotional Outlet</option>
+    <option value="Goal Tracking">Goal Tracking</option>
+    <option value="🖼️Creative Space">📌Creative Space</option>
+    <option value="Self-Reflection">🧘‍♂️Self-Reflection</option>
+  </select>
+  <textarea id="entryInput" placeholder="Write your thoughts here..." rows="5"></textarea>
+  <button onclick="addEntry()">Add Entry</button>
+
+  <!-- Search/Filter -->
+  <input type="text" id="searchBar" placeholder="Search by keyword or category..." onkeyup="filterEntries()">
+
+  <!-- Export Button -->
+  <button id="exportBtn" onclick="exportJournal()">Export to Text File</button>
+
+  <!-- Journal Table -->
+  <table id="journalTable">
+    <thead>
+      <tr>
+        <th>Date/Time</th>
+        <th>Category</th>
+        <th>Entry</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    let journal = JSON.parse(localStorage.getItem("journal")) || [];
+
+    function renderTable(filtered = null) {
+      const tbody = document.querySelector("#journalTable tbody");
+      tbody.innerHTML = "";
+      const data = filtered || journal;
+      data.forEach((item, index) => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${item.date}</td>
+          <td>${item.category}</td>
+          <td>${item.entry}</td>
+          <td class="actions">
+            <button onclick="editEntry(${index})">Edit</button>
+            <button onclick="deleteEntry(${index})">Delete</button>
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+      localStorage.setItem("journal", JSON.stringify(journal));
+    }
+
+    function addEntry() {
+      const dateInput = document.getElementById("dateInput");
+      const categoryInput = document.getElementById("categoryInput");
+      const entryInput = document.getElementById("entryInput");
+
+      const date = dateInput.value;
+      const category = categoryInput.value;
+      const entry = entryInput.value.trim();
+
+      if (date && category && entry) {
+        journal.push({ date, category, entry });
+        dateInput.value = "";
+        categoryInput.value = "Daily Log";
+        entryInput.value = "";
+        renderTable();
+      } else {
+        alert("Please fill in all fields.");
+      }
+    }
+
+    function editEntry(index) {
+      const newDate = prompt("Edit date/time:", journal[index].date);
+      const newCategory = prompt("Edit category:", journal[index].category);
+      const newEntry = prompt("Edit entry:", journal[index].entry);
+
+      if (newDate && newCategory && newEntry) {
+        journal[index] = { date: newDate, category: newCategory, entry: newEntry };
+        renderTable();
+      }
+    }
+
+    function deleteEntry(index) {
+      if (confirm("Delete this entry?")) {
+        journal.splice(index, 1);
+        renderTable();
+      }
+    }
+
+    function filterEntries() {
+      const query = document.getElementById("searchBar").value.toLowerCase();
+      const filtered = journal.filter(item =>
+        item.category.toLowerCase().includes(query) ||
+        item.entry.toLowerCase().includes(query) ||
+        item.date.toLowerCase().includes(query)
+      );
+      renderTable(filtered);
+    }
+
+    function exportJournal() {
+      if (journal.length === 0) {
+        alert("No entries to export.");
+        return;
+      }
+      let content = "My Journal Entries\n\n";
+      journal.forEach(item => {
+        content += `Date/Time: ${item.date}\nCategory: ${item.category}\nEntry: ${item.entry}\n\n`;
+      });
+
+      const blob = new Blob([content], { type: "text/plain" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "journal.txt";
+      link.click();
+    }
+
+    // Initial render
+    renderTable();
+  </script>
+</body>
+</html>
