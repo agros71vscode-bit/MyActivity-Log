@@ -7,56 +7,119 @@
 
 <style>
 body{
-    font-family: Arial, sans-serif;
+    font-family:Arial,sans-serif;
     margin:10px;
+    padding:0;
     background:#f9f9f9;
     font-size:18px;
 }
-h2{color:#333;}
-input,select,textarea,button{
-    margin:8px;
+
+*{
+    box-sizing:border-box;
+}
+
+h2{
+    text-align:center;
+}
+
+input,
+select,
+textarea,
+button{
+    width:100%;
+    margin:6px 0;
     padding:12px;
     font-size:16px;
 }
+
 textarea{
-    width:100%;
-    box-sizing:border-box;
+    min-height:120px;
+    resize:vertical;
 }
+
 table{
     width:100%;
     border-collapse:collapse;
     margin-top:20px;
-    background:#fff;
+    background:white;
 }
-th,td{
+
+th,
+td{
     border:1px solid #ccc;
-    padding:12px;
+    padding:10px;
     text-align:left;
     vertical-align:top;
 }
-th{background:#f4f4f4;}
-.actions button{margin-right:5px;}
-#searchBar{
-    width:100%;
-    box-sizing:border-box;
+
+th{
+    background:#f4f4f4;
 }
-.toolbar button{
-    background:#4CAF50;
-    color:white;
-    border:none;
+
+button{
     cursor:pointer;
 }
-.toolbar button:hover{
-    background:#45a049;
+
+.action-buttons button{
+    width:auto;
+    margin:2px;
 }
-@media(max-width:600px){
-    table{font-size:14px;}
-    button{
-        width:100%;
-        margin-top:10px;
+
+@media (max-width: 768px){
+
+    body{
+        font-size:16px;
     }
-}
-</style>
+
+    table,
+    thead,
+    tbody,
+    th,
+    td,
+    tr{
+        display:block;
+    }
+
+    thead{
+        display:none;
+    }
+
+    tr{
+        margin-bottom:15px;
+        border:1px solid #ccc;
+        background:white;
+        padding:10px;
+        border-radius:8px;
+    }
+
+    td{
+        border:none;
+        padding:6px 0;
+    }
+
+    td::before{
+        font-weight:bold;
+        display:block;
+        margin-bottom:3px;
+    }
+
+    td:nth-child(1)::before{
+        content:"Date/Time";
+    }
+
+    td:nth-child(2)::before{
+        content:"Category";
+    }
+
+    td:nth-child(3)::before{
+        content:"Entry";
+    }
+
+    td:nth-child(4)::before{
+        content:"Actions";
+    }
+
+}</style>
 </head>
 
 <body>
@@ -159,10 +222,10 @@ function renderTable(data = journal){
         <td>${escapeHTML(item.date)}</td>
         <td>${escapeHTML(item.category)}</td>
         <td>${escapeHTML(item.entry)}</td>
-        <td class="actions">
-            <button onclick="editEntry(${item.id})">Edit</button>
-            <button onclick="deleteEntry(${item.id})">Delete</button>
-        </td>
+        <td class="action-buttons">
+    <button onclick="editEntry(...)">✏️ Edit</button>
+    <button onclick="deleteEntry(...)">🗑 Delete</button>
+</td>
         `;
 
         tbody.appendChild(row);
