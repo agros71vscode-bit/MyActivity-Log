@@ -1,217 +1,374 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <!-- Make the page responsive on mobile -->
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Personal Journal</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 10px; background: #f9f9f9; font-size: 18px; }
-    h2 { color: #333; }
-    input, select, textarea, button { margin: 8px; padding: 12px; font-size: 16px; }
-    textarea { width: 100%; }
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; background: #fff; font-size: 16px; }
-    th, td { border: 1px solid #ccc; padding: 12px; text-align: left; vertical-align: top; }
-    th { background-color: #f4f4f4; }
-    .actions button { margin-right: 5px; }
-    #searchBar { margin-top: 20px; width: 100%; padding: 10px; font-size: 16px; }
-    #exportBtn, #exportCSVBtn, #importBtn, #exportGitHubBtn { margin-top: 20px; padding: 12px; background: #4CAF50; color: white; border: none; cursor: pointer; font-size: 16px; min-width: 150px; }
-    #exportBtn:hover, #exportCSVBtn:hover, #importBtn:hover, #exportGitHubBtn:hover { background: #45a049; }
-    @media (max-width: 600px) {
-      table { font-size: 14px; }
-      th, td { padding: 10px; }
-      button { width: 100%; margin-top: 10px; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Personal Journal</title>
+
+<style>
+body{
+    font-family: Arial, sans-serif;
+    margin:10px;
+    background:#f9f9f9;
+    font-size:18px;
+}
+h2{color:#333;}
+input,select,textarea,button{
+    margin:8px;
+    padding:12px;
+    font-size:16px;
+}
+textarea{
+    width:100%;
+    box-sizing:border-box;
+}
+table{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:20px;
+    background:#fff;
+}
+th,td{
+    border:1px solid #ccc;
+    padding:12px;
+    text-align:left;
+    vertical-align:top;
+}
+th{background:#f4f4f4;}
+.actions button{margin-right:5px;}
+#searchBar{
+    width:100%;
+    box-sizing:border-box;
+}
+.toolbar button{
+    background:#4CAF50;
+    color:white;
+    border:none;
+    cursor:pointer;
+}
+.toolbar button:hover{
+    background:#45a049;
+}
+@media(max-width:600px){
+    table{font-size:14px;}
+    button{
+        width:100%;
+        margin-top:10px;
     }
-  </style>
+}
+</style>
 </head>
+
 <body>
-  <h2>My Journal</h2>
 
-  <!-- Entry Form -->
-  <input type="datetime-local" id="dateInput">
-  <select id="categoryInput">
-    <option value="Daily Log">Daily Log</option>
-    <option value="Emotional Outlet">Emotional Outlet</option>
-    <option value="Goal Tracking">Goal Tracking</option>
-    <option value="Creative Space">Creative Space</option>
-    <option value="Self-Reflection">Self-Reflection</option>
-  </select>
-  <textarea id="entryInput" placeholder="Write your thoughts here..." rows="5"></textarea>
-  <button onclick="addEntry()">Save Entry</button>
+<h2>My Journal</h2>
 
-  <!-- Search/Filter -->
-  <input type="text" id="searchBar" placeholder="Search by keyword or category..." onkeyup="filterEntries()">
+<input type="datetime-local" id="dateInput">
 
-  <!-- Export & Import Buttons -->
-  <button id="exportBtn" onclick="exportJournal()">Export to Text File</button>
-  <button id="exportCSVBtn" onclick="exportJournalCSV()">Export to CSV (Google Sheets)</button>
-  <button id="exportGitHubBtn" onclick="exportToGitHubCSV()">Export to GitHub</button>
-  <input type="file" id="importFile" style="display:none" accept=".txt" onchange="importJournal(event)">
-  <button id="importBtn" onclick="document.getElementById('importFile').click()">Import from Text File</button>
+<select id="categoryInput">
+    <option>Daily Log</option>
+    <option>Emotional Outlet</option>
+    <option>Goal Tracking</option>
+    <option>Creative Space</option>
+    <option>Self-Reflection</option>
+</select>
 
-  <!-- Journal Table -->
-  <table id="journalTable">
-    <thead>
-      <tr>
-        <th>Date/Time</th>
-        <th>Category</th>
-        <th>Entry</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+<textarea id="entryInput" rows="5" placeholder="Write your thoughts here..."></textarea>
 
-  <script>
-    // Load journal entries from localStorage
-    let journal = JSON.parse(localStorage.getItem("journal")) || [];
+<button onclick="addEntry()">Save Entry</button>
 
-    function renderTable(filtered = null) {
-      const tbody = document.querySelector("#journalTable tbody");
-      tbody.innerHTML = "";
-      const data = filtered || journal;
-      data.forEach((item, index) => {
+<input type="text" id="searchBar"
+placeholder="Search by keyword, category or date..."
+onkeyup="filterEntries()">
+
+<div class="toolbar">
+    <button onclick="exportJournal()">Export TXT</button>
+    <button onclick="exportJournalCSV()">Export CSV</button>
+
+    <!-- GitHub export disabled for local-only version -->
+    <!--
+    <button onclick="exportToGitHubCSV()">Export GitHub</button>
+    -->
+
+    <input type="file" id="importFile"
+    style="display:none"
+    accept=".txt"
+    onchange="importJournal(event)">
+
+    <button onclick="document.getElementById('importFile').click()">
+        Import TXT
+    </button>
+</div>
+
+<table id="journalTable">
+<thead>
+<tr>
+<th>Date/Time</th>
+<th>Category</th>
+<th>Entry</th>
+<th>Actions</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+
+<script>
+
+let journal = JSON.parse(localStorage.getItem("journal")) || [];
+
+/* Upgrade older entries */
+journal = journal.map(item => {
+    if(!item.id){
+        item.id = Date.now() + Math.random();
+    }
+    return item;
+});
+
+function saveJournal(){
+    localStorage.setItem("journal", JSON.stringify(journal));
+}
+
+function escapeHTML(text){
+    const div = document.createElement("div");
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function setCurrentDateTime() {
+
+    const now = new Date();
+
+    now.setMinutes(
+        now.getMinutes() - now.getTimezoneOffset()
+    );
+
+    document.getElementById("dateInput").value =
+        now.toISOString().slice(0,16);
+}
+
+function renderTable(data = journal){
+
+    const tbody = document.querySelector("#journalTable tbody");
+    tbody.innerHTML = "";
+
+    data.forEach(item=>{
+
         const row = document.createElement("tr");
+
         row.innerHTML = `
-          <td>${item.date}</td>
-          <td>${item.category}</td>
-          <td>${item.entry}</td>
-          <td class="actions">
-            <button onclick="editEntry(${index})">Edit</button>
-            <button onclick="deleteEntry(${index})">Delete</button>
-          </td>
+        <td>${escapeHTML(item.date)}</td>
+        <td>${escapeHTML(item.category)}</td>
+        <td>${escapeHTML(item.entry)}</td>
+        <td class="actions">
+            <button onclick="editEntry(${item.id})">Edit</button>
+            <button onclick="deleteEntry(${item.id})">Delete</button>
+        </td>
         `;
+
         tbody.appendChild(row);
-      });
-      localStorage.setItem("journal", JSON.stringify(journal));
-    }
+    });
 
-    function addEntry() {
-      const dateInput = document.getElementById("dateInput");
-      const categoryInput = document.getElementById("categoryInput");
-      const entryInput = document.getElementById("entryInput");
+    saveJournal();
+}
 
-      const date = dateInput.value;
-      const category = categoryInput.value;
-      const entry = entryInput.value.trim();
+function addEntry(){
 
-      if (date && category && entry) {
-        journal.push({ date, category, entry });
-        dateInput.value = "";
-        categoryInput.value = "Daily Log";
-        entryInput.value = "";
-        renderTable();
-      } else {
+    const date = document.getElementById("dateInput").value;
+    const category = document.getElementById("categoryInput").value;
+    const entry = document.getElementById("entryInput").value.trim();
+
+    if(!date || !entry){
         alert("Please fill in all fields.");
-      }
+        return;
     }
 
-    function editEntry(index) {
-      const newDate = prompt("Edit date/time:", journal[index].date);
-      const newCategory = prompt("Edit category:", journal[index].category);
-      const newEntry = prompt("Edit entry:", journal[index].entry);
+    journal.push({
+        id: Date.now(),
+        date,
+        category,
+        entry
+    });
 
-      if (newDate && newCategory && newEntry) {
-        journal[index] = { date: newDate, category: newCategory, entry: newEntry };
-        renderTable();
-      }
+    journal.sort(
+        (a,b)=>new Date(b.date)-new Date(a.date)
+    );
+
+    document.getElementById("entryInput").value = "";
+    setCurrentDateTime();
+
+    renderTable();
+}
+
+function editEntry(id){
+
+    const index = journal.findIndex(x=>x.id===id);
+    if(index === -1) return;
+
+    const newDate = prompt(
+        "Edit date/time",
+        journal[index].date
+    );
+
+    if(newDate === null) return;
+
+    const newCategory = prompt(
+        "Edit category",
+        journal[index].category
+    );
+
+    if(newCategory === null) return;
+
+    const newEntry = prompt(
+        "Edit entry",
+        journal[index].entry
+    );
+
+    if(newEntry === null) return;
+
+    journal[index].date = newDate;
+    journal[index].category = newCategory;
+    journal[index].entry = newEntry;
+
+    renderTable();
+}
+
+function deleteEntry(id){
+
+    if(!confirm("Delete this entry?")){
+        return;
     }
 
-    function deleteEntry(index) {
-      if (confirm("Delete this entry?")) {
-        journal.splice(index, 1);
-        renderTable();
-      }
-    }
+    journal = journal.filter(x=>x.id!==id);
 
-    function filterEntries() {
-      const query = document.getElementById("searchBar").value.toLowerCase();
-      const filtered = journal.filter(item =>
+    renderTable();
+}
+
+function filterEntries(){
+
+    const query =
+        document.getElementById("searchBar")
+        .value
+        .toLowerCase();
+
+    const filtered = journal.filter(item =>
+        item.date.toLowerCase().includes(query) ||
         item.category.toLowerCase().includes(query) ||
-        item.entry.toLowerCase().includes(query) ||
-        item.date.toLowerCase().includes(query)
-      );
-      renderTable(filtered);
-    }
+        item.entry.toLowerCase().includes(query)
+    );
 
-    function exportJournal() {
-      if (journal.length === 0) {
+    renderTable(filtered);
+}
+
+function exportJournal(){
+
+    if(journal.length===0){
         alert("No entries to export.");
         return;
-      }
-      let content = "My Journal Entries\n\n";
-      journal.forEach(item => {
-        content += `Date/Time: ${item.date}\nCategory: ${item.category}\nEntry: ${item.entry}\n---\n`;
-      });
-
-      const blob = new Blob([content], { type: "text/plain" });
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = "journal.txt";
-      link.click();
     }
 
-    function exportJournalCSV() {
-      if (journal.length === 0) {
+    let content = "My Journal Entries\n\n";
+
+    journal.forEach(item=>{
+        content +=
+`Date/Time: ${item.date}
+Category: ${item.category}
+Entry: ${item.entry}
+---
+`;
+    });
+
+    const blob = new Blob([content], {type:"text/plain"});
+
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "journal.txt";
+    link.click();
+}
+
+function exportJournalCSV(){
+
+    if(journal.length===0){
         alert("No entries to export.");
         return;
-      }
-      let csvContent = "Date/Time,Category,Entry\n";
-      journal.forEach(item => {
-        const safeEntry = item.entry.replace(/"/g, '""');
-        csvContent += `"${item.date}","${item.category}","${safeEntry}"\n`;
-      });
-
-      const blob = new Blob([csvContent], { type: "text/csv" });
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = "journal.csv";
-      link.click();
     }
 
-    function importJournal(event) {
-      const file = event.target.files[0];
-      if (!file) return;
+    let csv = "Date/Time,Category,Entry\n";
 
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        const lines = e.target.result.split("---\n");
-        lines.forEach(block => {
-          const dateMatch = block.match(/Date\/Time: (.+)/);
-          const categoryMatch = block.match(/Category: (.+)/);
-          const entryMatch = block.match(/Entry: ([\s\S]+)/);
+    journal.forEach(item=>{
 
-          if (dateMatch && categoryMatch && entryMatch) {
-            journal.push({
-              date: dateMatch[1].trim(),
-              category: categoryMatch[1].trim(),
-              entry: entryMatch[1].trim()
-            });
-          }
+        const safeEntry =
+            item.entry.replace(/"/g,'""');
+
+        csv += `"${item.date}","${item.category}","${safeEntry}"\n`;
+    });
+
+    const blob = new Blob([csv], {type:"text/csv"});
+
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "journal.csv";
+    link.click();
+}
+
+function importJournal(event){
+
+    const file = event.target.files[0];
+    if(!file) return;
+
+    const reader = new FileReader();
+
+    reader.onload = function(e){
+
+        const blocks = e.target.result.split("---\n");
+
+        blocks.forEach(block=>{
+
+            const dateMatch =
+                block.match(/Date\/Time: (.+)/);
+
+            const categoryMatch =
+                block.match(/Category: (.+)/);
+
+            const entryMatch =
+                block.match(/Entry: ([\s\S]+)/);
+
+            if(dateMatch && categoryMatch && entryMatch){
+
+                const newItem = {
+                    id: Date.now() + Math.random(),
+                    date: dateMatch[1].trim(),
+                    category: categoryMatch[1].trim(),
+                    entry: entryMatch[1].trim()
+                };
+
+                const exists = journal.some(j=>
+                    j.date===newItem.date &&
+                    j.category===newItem.category &&
+                    j.entry===newItem.entry
+                );
+
+                if(!exists){
+                    journal.push(newItem);
+                }
+            }
         });
+
+        journal.sort(
+            (a,b)=>new Date(b.date)-new Date(a.date)
+        );
+
         renderTable();
-        alert("Journal imported successfully!");
-      };
-      reader.readAsText(file);
-    }
 
-    // Export journal directly to GitHub
-    async function exportToGitHubCSV() {
-      if (journal.length === 0) {
-        alert("No entries to export.");
-        return;
-      }
+        alert("Journal imported successfully.");
+    };
 
-      let csvContent = "Date/Time,Category,Entry\n";
-      journal.forEach(item => {
-        const safeEntry = item.entry.replace(/"/g, '""');
-        csvContent += `"${item.date}","${item.category}","${safeEntry}"\n`;
-      });
+    reader.readAsText(file);
+}
 
-      const base64Content = btoa(unescape(encodeURIComponent(csvContent)));
+setCurrentDateTime();
+renderTable();
 
-      // 🔑 Replace these placeholders with your actual details
-      const username = "agros71vscode-bit";          // your GitHub username
-      const repo = "MyActivity-Log";                 // your repository name
-      const path = "journal.csv";                    // file name in repo
-      const token = "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";       // paste your Git
+</script>
+
+</body>
+</html>
